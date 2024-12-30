@@ -22,3 +22,29 @@ class Product_form(BaseModel):
     class Config:
         from_attributes = True
     
+class Category(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+        
+class CategoryCreate(BaseModel):
+    name: str
+    category_description: str
+    
+class BrandSchema(BaseModel):
+    id: int
+    name: str
+    product_category_id: int
+
+    class Config:
+        from_attributes = True
+        
+class ModelSchema(BaseModel):
+    id: int
+    model: str
+    brand_id: int
+    
+    class Config:
+        from_attribute = True
