@@ -1,7 +1,7 @@
 from fastapi import FastAPI,Depends,Request,HTTPException,status
 from database import db_models
 from database.database import engine,get_db
-from schemas import Product_form,Category,CategoryCreate,BrandSchema,ModelSchema
+from schemas import Product_form,Category,CategoryCreate,BrandSchema,ModelSchema,BrandCreateSchema
 from sqlalchemy.orm import Session
 from sqlalchemy import exc
 import json
@@ -32,93 +32,61 @@ def product_form(request: Product_form, db: Session = Depends(get_db)):
     data = json.loads(data)
     print(data)
     
+    # return request
+    
     try:
         # Step 1 : Category
-        if data["category"] == "" or data["category"] is None or data["category"] == "string":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Category name is mandatory")
-        else:
-            category = db.query(db_models.ProductCategory).filter_by(name=data["category"]).first()
-            if not category:
-                if data["category_description"] is None or data["category_description"] == "" or data["category_description"] == "string":
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Category Description is mandatory")
-                else:
-                    category = db_models.ProductCategory(name=data["category"],description=data["category_description"])
-                    db.add(category)
-                    db.commit()
-                    db.refresh(category)
+        if data["category_id"] == "" or data["category_id"] is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Category ID is mandatory")
             
         # Step 2 : Brands
-        if data["brand"] == "" or data["brand"] is None or data["brand"] == "string":
+        if data["brand_id"] == "" or data["brand_id"] is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Brand is mandatory")
-        else:
-            brand = db.query(db_models.Brands).filter_by(brand_name=data["brand"]).first()
-            if not brand:
-                brand = db_models.Brands(brand_name=data["brand"],product_category_id=category.id)
-                db.add(brand)
-                db.commit()
-                db.refresh(brand)
             
         #Step 3 : Models
-        if data["model"] == "" or data["model"] is None or data["model"] == "string":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Model is mandatory")
+        if data["new_model"] is not None:
+            model = db_models.Models(model_name=data["new_model"],brand_id=data["brand_id"])
+            db.add(model)
+            db.commit()
+            db.refresh(model)
+        elif data["model_id"] is not None:
+            pass
         else:
-            model = db.query(db_models.Models).filter_by(model_name=data["model"]).first()
-            if not model:
-                model = db_models.Models(model_name=data["model"],brand_id=brand.id)
-                db.add(model)
-                db.commit()
-                db.refresh(model)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="New Model name or Existing Model name is necessary!!")
             
         # Step 4 : Products
-        if data["name"] == "" or data["name"] is None or data["name"] == "string" :
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Name is mandatory")
-        elif data["price"] < 1 or data["price"] is None or not isinstance(data["price"], (int, float)):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Price is mandatory")
-        else:
-            product = db_models.Products(name=data["name"],price=data["price"],brand_id=brand.id,model_id=model.id)
-            db.add(product)
-            db.commit()
-            db.refresh(product)  
+        product = db_models.Products(name=data["name"],price=data["price"],brand_id=data["brand_id"],model_id=data["model_id"] or model.id)
+        db.add(product)
+        db.commit()
+        db.refresh(product)
         
         # Step 5 : Sizes
-        if not data["sizes"] or data["sizes"] == [""] or data["sizes"] == ["string"] or data["sizes"] == "string":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Size is mandatory")
-        else:
-            for specific_size in data["sizes"]:
-                size = db_models.Sizes(sizes=specific_size,products_id=product.id)
-                db.add(size)
-                db.commit()
-                db.refresh(size)  
+        for specific_size in data["sizes"]:
+            size = db_models.Sizes(sizes=specific_size,products_id=product.id)
+            db.add(size)
+            db.commit()
+            db.refresh(size)  
             
         # Step 6 : Imaages
-        if not data["images"] or data["images"] == [""] or data["images"] == ["https://example.com/"] or data["images"] == "https://example.com/":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Proper Image URL is mandatory")
-        else:
-            for specific_img in data["images"]:
-                img = db_models.Images(image_url=specific_img,product_id=product.id)
-                db.add(img)
-                db.commit()
-                db.refresh(img)
+        for specific_img in data["images"]:
+            img = db_models.Images(image_url=specific_img,product_id=product.id)
+            db.add(img)
+            db.commit()
+            db.refresh(img)
             
         # Step 7 : ProductItem
-        if data["stock_qty"] < 1 or data["stock_qty"] is None or not isinstance(data["stock_qty"], int):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Quantity is mandatory")
-        else:
-            productItem = db_models.ProductItem(product_id=product.id,quantity=data["stock_qty"])
-            db.add(productItem)
-            db.commit()
-            db.refresh(productItem)
+        productItem = db_models.ProductItem(product_id=product.id,quantity=data["stock_qty"])
+        db.add(productItem)
+        db.commit()
+        db.refresh(productItem)
         
         # Step 8 : Colors
-        if not data["colors"] or data["colors"] == [""] or data["colors"] == ["string"] or data["colors"] == "string":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Color is mandatory")
-        else:
-            for specific_color in data["colors"]:
-                color = db_models.Colors(available_colors=specific_color,product_item_id=productItem.id)
-                db.add(color)
-                db.commit()
-                db.refresh(color)
-        
+        for specific_color in data["colors"]:
+            color = db_models.Colors(available_colors=specific_color,product_item_id=productItem.id)
+            db.add(color)
+            db.commit()
+            db.refresh(color)
+    
         return {"message": "Product and associated data stored successfully"}
         
     except Exception as e:
@@ -134,13 +102,8 @@ def get_categories(db: Session = Depends(get_db)):
 @app.post("/dashboard/categories", response_model=Category,status_code=status.HTTP_201_CREATED)
 def add_category(category: CategoryCreate, db: Session = Depends(get_db)):
     print(category)
-    # Check if the category already exists
-    existing_category = db.query(db_models.ProductCategory).filter_by(name=category.name).first()
-    if existing_category:
-        raise HTTPException(status_code=400, detail="Category already exists.")
-
     # Create new category
-    new_category = db_models.ProductCategory(name=category.name,description=category.category_description)
+    new_category = db_models.ProductCategory(name=category.new_category,description=category.category_description)
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
@@ -162,12 +125,22 @@ def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
         # Manually create a dictionary and pass it to the Pydantic schema
         brand_data = {
             "id": brand.id,
-            "name": brand.brand_name,
+            "brand_name": brand.brand_name,
             "product_category_id": brand.product_category_id
         }
         result.append(BrandSchema(**brand_data))
 
     return result
+
+@app.post("/dashboard/brands",response_model=BrandSchema,status_code=status.HTTP_201_CREATED)
+def add_brand_by_category(request: BrandCreateSchema,db: Session = Depends(get_db)):
+    print(request)
+    brand = db_models.Brands(brand_name=request.new_brand,product_category_id=request.category_id)
+    db.add(brand)
+    db.commit()
+    db.refresh(brand)
+    
+    return brand
 
 @app.get("/dashboard/models",response_model=List[ModelSchema],status_code=status.HTTP_200_OK)
 def get_model_by_brand(brand_id: int,db: Session = Depends(get_db)):
