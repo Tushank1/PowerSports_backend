@@ -109,6 +109,12 @@ def add_category(category: CategoryCreate, db: Session = Depends(get_db)):
     db.refresh(new_category)
     return new_category
 
+@app.post("/dashboard/category/{category}", response_model=Category,status_code=status.HTTP_200_OK)
+def for_category_id(category: str,db: Session = Depends(get_db)):
+    print(category)
+    category_id = db.query(db_models.ProductCategory).filter_by(name=category).first()
+    return category_id
+
 
 @app.get("/dashboard/brands", response_model=list[BrandSchema],status_code=status.HTTP_200_OK)
 def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
@@ -131,6 +137,24 @@ def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
         result.append(BrandSchema(**brand_data))
 
     return result
+
+@app.post("/collections/{categoryID}",status_code=status.HTTP_200_OK)
+def all_stuff(categoryID: int,db: Session = Depends(get_db)):
+    category = db.query(db_models.ProductCategory).filter(db_models.ProductCategory.id == categoryID).first()
+    brands = db.query(db_models.Brands).filter(db_models.Brands.product_category_id == categoryID).all()
+    brand_ids = [brand.id for brand in brands]
+    models = db.query(db_models.Models).filter(db_models.Models.brand_id.in_(brand_ids)).all()
+    model_ids = [model.id for model in models]
+    products = db.query(db_models.Products).filter(db_models.Products.brand_id.in_(brand_ids),db_models.Products.model_id.in_(model_ids)).all()
+    product_ids = [product.id for product in products]
+    sizes = db.query(db_models.Sizes).filter(db_models.Sizes.products_id.in_(product_ids)).all()
+    img = db.query(db_models.Images).filter(db_models.Images.product_id.in_(product_ids)).all()
+    product_items = db.query(db_models.ProductItem).filter(db_models.ProductItem.product_id.in_(product_ids)).all()
+    product_item_ids = [product_item.id for product_item in product_items]
+    colors = db.query(db_models.Colors).filter(db_models.Colors.product_item_id.in_(product_item_ids)).all()
+    
+    return {"category": category,"brands" : brands,"models" : models,"products" :products,"sizes":sizes,"img":img,"product_items":product_items,"colors":colors}
+    # return category,brands,models,products,sizes,img,product_items,colors
 
 @app.post("/dashboard/brands",response_model=BrandSchema,status_code=status.HTTP_201_CREATED)
 def add_brand_by_category(request: BrandCreateSchema,db: Session = Depends(get_db)):
