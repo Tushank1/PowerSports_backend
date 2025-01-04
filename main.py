@@ -138,24 +138,6 @@ def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
 
     return result
 
-@app.post("/collections/{categoryID}",status_code=status.HTTP_200_OK)
-def all_stuff(categoryID: int,db: Session = Depends(get_db)):
-    category = db.query(db_models.ProductCategory).filter(db_models.ProductCategory.id == categoryID).first()
-    brands = db.query(db_models.Brands).filter(db_models.Brands.product_category_id == categoryID).all()
-    brand_ids = [brand.id for brand in brands]
-    models = db.query(db_models.Models).filter(db_models.Models.brand_id.in_(brand_ids)).all()
-    model_ids = [model.id for model in models]
-    products = db.query(db_models.Products).filter(db_models.Products.brand_id.in_(brand_ids),db_models.Products.model_id.in_(model_ids)).all()
-    product_ids = [product.id for product in products]
-    sizes = db.query(db_models.Sizes).filter(db_models.Sizes.products_id.in_(product_ids)).all()
-    img = db.query(db_models.Images).filter(db_models.Images.product_id.in_(product_ids)).all()
-    product_items = db.query(db_models.ProductItem).filter(db_models.ProductItem.product_id.in_(product_ids)).all()
-    product_item_ids = [product_item.id for product_item in product_items]
-    colors = db.query(db_models.Colors).filter(db_models.Colors.product_item_id.in_(product_item_ids)).all()
-    
-    return {"category": category,"brands" : brands,"models" : models,"products" :products,"sizes":sizes,"img":img,"product_items":product_items,"colors":colors}
-    # return category,brands,models,products,sizes,img,product_items,colors
-
 @app.post("/dashboard/brands",response_model=BrandSchema,status_code=status.HTTP_201_CREATED)
 def add_brand_by_category(request: BrandCreateSchema,db: Session = Depends(get_db)):
     print(request)
@@ -185,6 +167,54 @@ def get_model_by_brand(brand_id: int,db: Session = Depends(get_db)):
     print(result)
     return result
 
+@app.post("/collections/{categoryID}",status_code=status.HTTP_200_OK)
+def all_stuff(categoryID: int,db: Session = Depends(get_db)):
+    
+    category = db.query(db_models.ProductCategory).filter(db_models.ProductCategory.id == categoryID).first()
+    
+    brands = db.query(db_models.Brands).filter(db_models.Brands.product_category_id == categoryID).all()
+    
+    brand_ids = [brand.id for brand in brands]
+    models = db.query(db_models.Models).filter(db_models.Models.brand_id.in_(brand_ids)).all() # .in_() => SQLAlchemy function to check if the column value exists in the given list
+    
+    model_ids = [model.id for model in models]
+    products = db.query(db_models.Products).filter(db_models.Products.brand_id.in_(brand_ids),db_models.Products.model_id.in_(model_ids)).all()
+    
+    product_ids = [product.id for product in products]
+    sizes = db.query(db_models.Sizes).filter(db_models.Sizes.products_id.in_(product_ids)).all()
+    img = db.query(db_models.Images).filter(db_models.Images.product_id.in_(product_ids)).all()
+    product_items = db.query(db_models.ProductItem).filter(db_models.ProductItem.product_id.in_(product_ids)).all()
+    
+    product_item_ids = [product_item.id for product_item in product_items]
+    colors = db.query(db_models.Colors).filter(db_models.Colors.product_item_id.in_(product_item_ids)).all()
+    
+    return {"category": category,"brands" : brands,"models" : models,"products" :products,"sizes":sizes,"img":img,"product_items":product_items,"colors":colors}
+    # return category,brands,models,products,sizes,img,product_items,colors
+
+@app.post("/productItem/{productItemID}",status_code=status.HTTP_200_OK)
+def productItemDetail(productItemID: int,db: Session = Depends(get_db)):
+    product = db.query(db_models.Products).filter(db_models.Products.id == productItemID).first()
+    # print(product.__dict__)
+    
+    size_store = []
+    sizes = db.query(db_models.Sizes).filter(db_models.Sizes.products_id == product.id).all()
+    for size in sizes:
+        size_store.append(size)
+    
+    img_store = []
+    img = db.query(db_models.Images).filter(db_models.Images.product_id == productItemID).all()
+    for image in img:
+        img_store.append(image)
+        
+    product_item = db.query(db_models.ProductItem).filter(db_models.ProductItem.product_id == productItemID).first()
+    
+    color_store = []
+    color = db.query(db_models.Colors).filter(db_models.Colors.product_item_id == product_item.id).all()
+    for col in color:
+        color_store.append(col)
+    
+    # print({"Product": product,"Size":size_store,"Image":img_store,"Product_item":product_item,"Color": color_store})
+    return {"Product": product,"Size":size_store,"Image":img_store,"Product_item":product_item,"Color": color_store}
     
 @app.delete("/delete_product_from_category/{category_id}",status_code=status.HTTP_200_OK)
 def destroy_product(category_id: int,product_id: int,db: Session = Depends(get_db)):
