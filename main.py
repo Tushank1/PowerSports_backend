@@ -132,6 +132,7 @@ def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
         brand_data = {
             "id": brand.id,
             "brand_name": brand.brand_name,
+            "brand_description": brand.brand_description,
             "product_category_id": brand.product_category_id
         }
         result.append(BrandSchema(**brand_data))
@@ -141,7 +142,7 @@ def get_brands_by_category(category_id: int, db: Session = Depends(get_db)):
 @app.post("/dashboard/brands",response_model=BrandSchema,status_code=status.HTTP_201_CREATED)
 def add_brand_by_category(request: BrandCreateSchema,db: Session = Depends(get_db)):
     print(request)
-    brand = db_models.Brands(brand_name=request.new_brand,product_category_id=request.category_id)
+    brand = db_models.Brands(brand_name=request.new_brand,brand_description=request.brand_description,product_category_id=request.category_id)
     db.add(brand)
     db.commit()
     db.refresh(brand)

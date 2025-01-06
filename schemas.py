@@ -55,6 +55,7 @@ class CategoryCreate(BaseModel):
 class BrandSchema(BaseModel):
     id: int
     brand_name: str
+    brand_description: str
     product_category_id: int
 
     class Config:
@@ -62,6 +63,7 @@ class BrandSchema(BaseModel):
         
 class BrandCreateSchema(BaseModel):
     new_brand: str
+    brand_description: str
     category_id: int
 
 class ModelSchema(BaseModel):

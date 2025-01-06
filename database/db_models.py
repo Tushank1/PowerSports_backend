@@ -42,6 +42,7 @@ class Brands(Base):
     
     id = Column(Integer,primary_key=True,index=True)
     brand_name = Column(String,nullable=False)
+    brand_description: str = Column(String,nullable=False)
     product_category_id = Column(Integer,ForeignKey("product_category.id"))
     
     # Relationship to Products
