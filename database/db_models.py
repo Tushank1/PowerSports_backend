@@ -109,3 +109,14 @@ class Colors(Base):
     
     # Relationship to ProductItem
     product_item = relationship("ProductItem",back_populates="color")
+    
+    
+    
+class User(Base):
+    __tablename__ = "user"
+    
+    id = Column(Integer,primary_key=True,nullable=False,index=True)
+    first_name = Column(String,nullable=False)
+    last_name = Column(String,nullable=False)
+    email = Column(String,unique=True,nullable=False)
+    hashed_password = Column(String)

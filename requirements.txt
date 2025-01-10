@@ -2,3 +2,9 @@ fastapi[standard]
 uvicorn[standard]
 sqlalchemy
 fastapi[all]
+aiosqlite
+bcrypt
+cryptography
+python-jose
+python-multipart
+passlib

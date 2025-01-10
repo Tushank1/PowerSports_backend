@@ -1,9 +1,11 @@
-from pydantic import BaseModel,HttpUrl,validator
-from typing import List,Optional
+from pydantic import BaseModel,HttpUrl,validator,EmailStr,constr,Field,StringConstraints
+from typing import List,Optional,Annotated
+
+
+PasswordStr = constr(min_length=6, max_length=128)
 
 class Product_form(BaseModel):
     category_id: int
-    category_description: Optional[str] = None  # Optional for existing categories
     name: str
     price: float
     brand_id: int
@@ -70,6 +72,16 @@ class ModelSchema(BaseModel):
     id: int
     model: str
     brand_id: int
+    
+    class Config:
+        from_attribute = True
+        
+
+class UserCreate(BaseModel):    
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: Annotated[str, StringConstraints(min_length=6, max_length=128)]
     
     class Config:
         from_attribute = True
