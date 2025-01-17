@@ -9,8 +9,7 @@ class Product_form(BaseModel):
     name: str
     price: float
     brand_id: int
-    new_model: Optional[str] = None
-    model_id: Optional[int] = None
+    model_id: int
     images: List[HttpUrl]
     colors: List[str]
     sizes: List[str]
@@ -76,6 +75,10 @@ class ModelSchema(BaseModel):
     class Config:
         from_attribute = True
         
+class ModelCreateSchema(BaseModel):
+    new_model: str
+    brand_id: int
+        
 
 class UserCreate(BaseModel):    
     first_name: str
@@ -85,3 +88,7 @@ class UserCreate(BaseModel):
     
     class Config:
         from_attribute = True
+        
+class LoginRequest(BaseModel):
+    email: str
+    password: str

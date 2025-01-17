@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException,status
 from database import db_models
 from database.database import get_db
-from schemas import Product_form,Category,CategoryCreate,BrandSchema,ModelSchema,BrandCreateSchema
+from schemas import Product_form,Category,CategoryCreate,BrandSchema,ModelSchema,BrandCreateSchema,ModelCreateSchema
 from sqlalchemy import exc
 import json
 from typing import List
@@ -29,22 +29,15 @@ async def product_form(request: Product_form, db: AsyncSession = Depends(get_db)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Brand is mandatory")
             
         #Step 3 : Models
-        if data["new_model"] is not None:
-            model = db_models.Models(model_name=data["new_model"],brand_id=data["brand_id"])
-            db.add(model)
-            await db.commit()
-            await db.refresh(model)
-        elif data["model_id"] is not None:
-            pass
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="New Model name or Existing Model name is necessary!!")
+        if data["model_id"] is None or data["model_id"] == "":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Model is mandatory")
         
         # Step 4 : Products
         product = db_models.Products(
             name=data["name"],
             price=data["price"],
             brand_id=data["brand_id"],
-            model_id=data["model_id"] or model.id
+            model_id=data["model_id"]
         )
         db.add(product)
         await db.flush()  # Ensures `product.id` is available
@@ -86,7 +79,7 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 
 @router.post("/categories", response_model=Category,status_code=status.HTTP_201_CREATED)
 async def add_category(category: CategoryCreate, db: AsyncSession = Depends(get_db)):
-    # print(category)
+    print(category)
     new_category = db_models.ProductCategory(name=category.new_category,description=category.category_description)
     db.add(new_category)
     await db.commit()
@@ -114,7 +107,7 @@ async def get_brands_by_category(category_id: int, db: AsyncSession = Depends(ge
 
 @router.post("/brands",response_model=BrandSchema,status_code=status.HTTP_201_CREATED)
 async def add_brand_by_category(request: BrandCreateSchema,db: AsyncSession = Depends(get_db)):
-    # print(request)
+    print(request)
     brand = db_models.Brands(brand_name=request.new_brand,brand_description=request.brand_description,product_category_id=request.category_id)
     db.add(brand)
     await db.commit()
@@ -140,6 +133,22 @@ async def get_model_by_brand(brand_id: int,db: AsyncSession = Depends(get_db)):
         for model in models
     ]
     return serialized_models
+
+@router.post("/models",response_model=List[ModelSchema],status_code=status.HTTP_200_OK)
+async def add_model_by_brandId(request:ModelCreateSchema,db: AsyncSession = Depends(get_db)):
+    print(request)
+    model = db_models.Models(model_name=request.new_model,brand_id=request.brand_id)
+    db.add(model)
+    await db.commit()
+    await db.refresh(model)
+    
+    model_dict = {
+        "id": model.id,
+        "model": model.model_name,  # Ensure this matches your actual model attributes
+        "brand_id": model.brand_id,
+    }
+    
+    return [ModelSchema(**model_dict)]
 
 @router.delete("/delete_product_from_category/{category_id}",status_code=status.HTTP_200_OK)
 async def destroy_product(category_id: int,product_id: int,db: AsyncSession = Depends(get_db)):

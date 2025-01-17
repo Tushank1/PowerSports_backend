@@ -91,9 +91,9 @@ def create_access_token(data: dict,expires_delta: timedelta | None = None):
 
 @app.post("/token")
 async def login_for_access_token(
-    email: str, password: str, db: AsyncSession = Depends(get_db)
+    login_request: schemas.LoginRequest, db: AsyncSession = Depends(get_db)
 ):
-    user = await authenticate_user(email, password, db)  # Ensure it's awaited
+    user = await authenticate_user(login_request.email, login_request.password, db)  # Ensure it's awaited
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -106,17 +106,17 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-def verify_token(token: str = Depends(oauth2_scheme)):
+@app.post("/verify-token")
+async def verify_user_token(token: str = Depends(oauth2_scheme)):
     try:
-        payload = jwt.decode(token, SECRET_KEY,algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Token is invalid or expired")
-        return payload
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired"
+            )
+        return {"message": "Token is valid", "email": email}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired")
-
-@app.get("/verify-token/{token}")
-async def verify_user_token(token: str):
-    verify_token(token=token)
-    return {"message":"Token is valid"}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired"
+        )
