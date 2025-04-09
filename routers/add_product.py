@@ -17,7 +17,9 @@ router = APIRouter(
 @router.post("",status_code=status.HTTP_201_CREATED)
 async def product_form(request: Product_form, db: AsyncSession = Depends(get_db)):
     data = json.loads(request.model_dump_json())
-    # print(data)
+    print(data)
+    
+    # return
         
     try:
         # Step 1 : Category

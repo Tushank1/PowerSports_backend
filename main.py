@@ -11,7 +11,6 @@ from passlib.context import CryptContext
 from database.db_models import User
 import schemas
 from sqlalchemy.future import select
-import logging
 
 
 app = FastAPI()
