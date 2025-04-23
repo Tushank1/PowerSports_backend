@@ -11,6 +11,7 @@ from passlib.context import CryptContext
 from database.db_models import User
 import schemas
 from sqlalchemy.future import select
+from config import settings
 
 
 app = FastAPI()
@@ -45,9 +46,9 @@ app.include_router(collection.router)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"],deprecated="auto")
 
-SECRET_KEY = "123456789"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 async def get_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(select(db_models.User).where(db_models.User.email == email))
