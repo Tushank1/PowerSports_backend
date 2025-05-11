@@ -4,7 +4,7 @@ from database.database import async_engine,AsyncSession,get_db
 from fastapi.middleware.cors import CORSMiddleware
 from routers import add_product,collection
 
-from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError,jwt
 from datetime import datetime,timedelta,timezone
 from passlib.context import CryptContext
@@ -101,7 +101,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.email,"user_id": user.id}, expires_delta=access_token_expires)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -111,12 +111,21 @@ async def verify_user_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        if email is None:
+        user_id: int = payload.get("user_id")
+        if email is None or user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired"
             )
-        return {"message": "Token is valid", "email": email}
+        return {"message": "Token is valid", "email": email, "user_id": user_id}
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired"
         )
+        
+@app.post("/checkout_Billing",status_code=status.HTTP_200_OK)
+async def BillingAddress(request: schemas.BillingAddress,db: AsyncSession = Depends(get_db)):
+    address = db_models.BillingAddress(country=request.country,first_name=request.first_name,last_name=request.last_name,address=request.address,city=request.city,state=request.state,pincode=request.pincode,mobile_no=request.phone_no,user_id=request.user_id)
+    db.add(address)
+    await db.commit()
+    await db.refresh(address)
+    return "Done"

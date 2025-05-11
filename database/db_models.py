@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
-
 
 class ProductCategory(Base):
     __tablename__ = "product_category"
@@ -120,3 +119,39 @@ class User(Base):
     last_name = Column(String,nullable=False)
     email = Column(String,unique=True,nullable=False)
     hashed_password = Column(String)
+    
+    billing_address = relationship("BillingAddress",back_populates="user")
+    order_table = relationship("OrderTable",back_populates="user")
+    
+class BillingAddress(Base):
+    __tablename__ = "billing_address"
+    
+    id = Column(Integer,primary_key=True,nullable=False,index=True)
+    country = Column(String,nullable=False)
+    first_name = Column(String,nullable=False)
+    last_name = Column(String,nullable=False)
+    address = Column(String,nullable=False)
+    city = Column(String,nullable=False)
+    state = Column(String,nullable=False)
+    pincode = Column(String,nullable=False)
+    mobile_no = Column(String,nullable=False)
+    user_id = Column(Integer,ForeignKey("user.id"),nullable=False)
+
+    user = relationship("User",back_populates="billing_address")
+    orders = relationship("OrderTable",back_populates="billing_address")
+    
+class OrderTable(Base):
+    __tablename__ = "order_table"
+    
+    id = Column(Integer,primary_key=True,index=True,nullable=False)
+    img_link = Column(String,nullable=False)
+    qty = Column(Integer,nullable=False)
+    name = Column(String,nullable=False)
+    color = Column(String,nullable=False)
+    size = Column(String,nullable=False)
+    price = Column(Float,nullable=False)
+    user_id = Column(Integer,ForeignKey("user.id"),nullable=False)
+    billing_address_id = Column(Integer,ForeignKey("billing_address.id"),nullable=False)
+    
+    user = relationship("User",back_populates="order_table")
+    billing_address = relationship("BillingAddress",back_populates="orders")

@@ -92,3 +92,14 @@ class UserCreate(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+    
+class BillingAddress(BaseModel):
+    country: str
+    first_name: str
+    last_name: str
+    address: str
+    city: str
+    state: str
+    pincode: int
+    phone_no: int
+    user_id: int
