@@ -122,10 +122,18 @@ async def verify_user_token(token: str = Depends(oauth2_scheme)):
             status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired"
         )
         
-@app.post("/checkout_Billing",status_code=status.HTTP_200_OK)
+@app.post("/checkout_Billing",response_model=schemas.BillingAddressId,status_code=status.HTTP_200_OK)
 async def BillingAddress(request: schemas.BillingAddress,db: AsyncSession = Depends(get_db)):
     address = db_models.BillingAddress(country=request.country,first_name=request.first_name,last_name=request.last_name,address=request.address,city=request.city,state=request.state,pincode=request.pincode,mobile_no=request.phone_no,user_id=request.user_id)
     db.add(address)
     await db.commit()
     await db.refresh(address)
+    return address
+
+@app.post("/add_order",status_code=status.HTTP_200_OK)
+async def OrderTable(request: schemas.FinalOrder,db: AsyncSession = Depends(get_db)):
+    finalOrder = db_models.OrderTable(img_link=str(request.img_link),qty=request.qty,name=request.name,color=request.color,size=request.size,price=request.price,user_id=request.user_id,billing_address_id=request.billing_address_id)
+    db.add(finalOrder)
+    await db.commit()
+    await db.refresh(finalOrder)
     return "Done"

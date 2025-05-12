@@ -100,6 +100,23 @@ class BillingAddress(BaseModel):
     address: str
     city: str
     state: str
-    pincode: int
-    phone_no: int
+    pincode: int = Field(..., ge=100000, le=999999)
+    phone_no: int = Field(..., ge=1000000000, le=9999999999)
     user_id: int
+    
+    @validator('country', 'first_name', 'last_name', 'address', 'city', 'state')
+    def strip_whitespace(cls, v):
+        return v.strip()
+    
+class BillingAddressId(BaseModel):
+    id: int
+    
+class FinalOrder(BaseModel):
+    img_link: HttpUrl
+    qty: int
+    name: str
+    color: str
+    size: str
+    price: float
+    user_id: int
+    billing_address_id: int
